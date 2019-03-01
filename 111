@@ -1,0 +1,56 @@
+@author: fengxingyu
+"""
+
+
+fc_dim=256
+f=20
+m=5
+
+def get_batch(data, labels, dataset_len, batch_size):
+    random_order=random.sample(range(dataset_len), bastch_size)
+    return data[random_oredre], labels[random_order]
+
+ 
+def convnet(x):
+ x=tf.layers.conv2d(x, filters=32, kernel_size=3, padding='SAME')
+ x=tf.layers.max_pooling2d(x, pool_size=2, strides=2)
+ x=tf.layers.conv2d(x, filters=64, kernel_size=3, padding='SAME')
+ x=tf.layers.max_pooling2d(x, pool_size=2, strides=2)
+ x=tf.layers.conv2d(x, filters=128, kernel_size=3, padding='SAME')
+ x=tf.layers.max_pooling2d(x, pool_size=2, strides=2)
+ return x
+
+
+if __name__ == '__main__':
+    act_mask_1=tf.random_uniform(shape=[m], minval=0, maxval=f - 1, dtype=tf.int32)
+    mask_1=tf.zeros([f],tfk.int32)
+    mask_2=tf.ones([m],tf.int32)
+    ref = tf.Variable(mask_1,dtype = tf.int32)
+    sess.run(tf.global_variables_initializer())
+    act_mask = sess.run(act_mask_1)#索引
+    mask=tf.scatter_update(ref,indices=act_mask, updates=mask_2)#掩码
+    #随机二维掩码 act_mask是索引 
+    bool_1=sess.run(tf.cast(mask,bool))
+    M=sess.run(tf.boolean_mask(F, bool_1))
+    #产生M
+    MF=tf.concat([M, F], 0)
+    out=convnet(MF)
+    fc1=tf.layers.dense(out, fc_dim)
+    fc2=tf.layers.dense(mask, fc_dim)
+    fc1_flatten=fc1.flatten()
+    fc2_flatten=fc2.flatten()
+    concat=tf.concat([fc1, fc2], 0)
+    fc3=tf.layers.dense(concat, 3 * m)
+    fc3_reshape=fc3.reshape(-1, 3)
+    prob=tf.nn.softmax(fc3, 1)
+    directions=tf.math.argmax(prob, 1)#此处是输出最大的索引，是一个向量[..,..,..,..]m个
+    for t in directions:
+        if t == 0:
+            print("qqq")
+        if t == 1:
+            print("www")
+        if t == 2:
+            print("eee")
+    
+    
+    
