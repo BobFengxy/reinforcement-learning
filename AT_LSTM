@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Mar  6 16:17:13 2019
+
+@author: fengxingyu
+"""
+
+import tensorflow as tf
+import numpy as np
+import random
+import os
+
+class lstm:
+    def __int__(self):
+        pass
+    
+    def change_mask(self,action,act_mask_t,m,f):
+        self.action=action
+        self.act_mask_t=act_mask_t
+        self.m=m
+        self.f=f
+        # self.act_mask=act_mask
+        for i in range(self.m):#此处还需要添加移动的限制条件
+            if i>=0 and i<=self.m-1
+                up=math.ceil((self.act_mask_t[i]+self.act_mask_t[i+1])/2)
+            else:
+                up[i]=self.f-1
+            if i>=1 and i<=self.m-1:
+                down=math.ceil((self.act_mask_t[i]+self.act_mask_t[i-1])/2)
+            else:
+                down=0
+            if self.action[i]==0:#左移
+                self.act_mask_t[i]-=min(1,(self.act_mask_t[i]-down))
+            if self.action[i]==1:#不移动
+                pass 
+            if self.action[i]==2:#右移动
+                self.act_mask_t[i]+=min(1,(up-self.act_mask_t[i]-1))
+        return self.act_mask_t
+    
+    def at_lstm(self,observation):
+        #加载lstm，产生准确度
+        return 
