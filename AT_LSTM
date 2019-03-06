@@ -25,7 +25,7 @@ class lstm:
             if i>=0 and i<=self.m-1
                 up=math.ceil((self.act_mask_t[i]+self.act_mask_t[i+1])/2)
             else:
-                up[i]=self.f-1
+                up=self.f-1
             if i>=1 and i<=self.m-1:
                 down=math.ceil((self.act_mask_t[i]+self.act_mask_t[i-1])/2)
             else:
@@ -35,7 +35,7 @@ class lstm:
             if self.action[i]==1:#不移动
                 pass 
             if self.action[i]==2:#右移动
-                self.act_mask_t[i]+=min(1,(up-self.act_mask_t[i]-1))
+                self.act_mask_t[i]+=min(1,(up-self.act_mask_t[i]))
         return self.act_mask_t
     
     def at_lstm(self,observation):
