@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Mar  6 14:12:57 2019
+
+@author: fengxingyu
+"""
+import numpy as np
+import matplotlib.pyplot as plt
+import random
+
+from FD import FDnet
+from AT_LSTM import lstm
+
+f=20
+m=5
+i_episode_sum=300#强化学习次数300次
+j_episode_sum=5#每回合5次
+
+RL=FDnet(n_action=3,fc_dim=256,f=f,m=m,learning_rate=0.02,reward_decay=0.99)
+
+for i_episode in range(i_episode_sum):
+    act_mask=random.sample(range(0,f-1),m)#生成随机不重复的索引
+    
+    mask_1=np.zeros([f],dtype=np.int)
+    mask_1[act_mask]=1#生成随机01索引
+    
+    observation=mask_1
+    data=
+    for j_episode in range(j_episode_sum):
+        action=RL.choose_action(observation,data)
+        ls=lstm()
+        act_mask_t=ls.change_mask(action,act_mask_t)
+        mask_1=np.zeros([f],dtype=np.int)
+        mask_1[act_mask_t]=1
+        observation_t=mask_1
+        
+        reward=ls.at_lstm(observation_t)
+        RL.store_transition(observation, action, reward)#存储这一回合的transition
+        
+    #此回合结束
+    
+    if j_episode==j_episode_sum-1:
+        ep_re_sum = sum(RL.ep_rs)
+        
+        if 'running_reward' not in globals():
+            running_reward=ep_rs_sum
+        else:
+            running_reward=running_reward*0.99+ep_rs_sum*0.01
+            
+        vt=RL.learn()
+        break
+    observation = observation_t
