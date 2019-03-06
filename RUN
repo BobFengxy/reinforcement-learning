@@ -32,10 +32,10 @@ for i_episode in range(i_episode_sum):
         ls=lstm()
         act_mask_t=ls.change_mask(action,act_mask_t)
         mask_1=np.zeros([f],dtype=np.int)
-        mask_1[act_mask_t]=1
+        mask_1[act_mask_t]=1#产生新的mask
         observation_t=mask_1
         
-        reward=ls.at_lstm(observation_t)
+        reward=ls.at_lstm(observation_t)#丢入lstm得出奖励
         RL.store_transition(observation, action, reward)#存储这一回合的transition
         
     #此回合结束
