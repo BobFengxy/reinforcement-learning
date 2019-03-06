@@ -20,7 +20,7 @@ j_episode_sum=5#每回合5次
 RL=FDnet(n_action=3,fc_dim=256,f=f,m=m,learning_rate=0.02,reward_decay=0.99)
 
 for i_episode in range(i_episode_sum):
-    act_mask=random.sample(range(0,f-1),m)#生成随机不重复的索引
+    act_mask=random.sample(range(0,f),m)#生成随机不重复的索引
     
     mask_1=np.zeros([f],dtype=np.int)
     mask_1[act_mask]=1#生成随机01索引
