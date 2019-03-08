@@ -9,35 +9,48 @@ Created on Wed Mar  6 16:17:13 2019
 import tensorflow as tf
 import numpy as np
 import random
-import os
+# import os
+import math
 
 class lstm:
     def __int__(self):
         pass
     
-    def change_mask(self,action,act_mask_t,m,f):
-        self.action=action
-        self.act_mask_t=act_mask_t
+    def change_mask(self,act_mask,action,m,f):
+        self.action=action#1*m
         self.m=m
         self.f=f
+        self.act_mask=act_mask
+        act_mask_t=act_mask#1*f
         # self.act_mask=act_mask
-        for i in range(self.m):#此处还需要添加移动的限制条件
-            if i>=0 and i<=self.m-1
-                up=math.ceil((self.act_mask_t[i]+self.act_mask_t[i+1])/2)
+        # print('QQQQQ1')
+        # print(act_mask_t)
+        # print('QQQQQ2')
+
+        # print(action)
+        # print(self.m)
+        # print(f)
+        for i in range(m):#此处还需要添加移动的限制条件
+            if i>=0 and i<=(m)-2:
+                up=math.ceil((act_mask_t[i]+act_mask_t[i+1])/2)
             else:
-                up=self.f-1
-            if i>=1 and i<=self.m-1:
-                down=math.ceil((self.act_mask_t[i]+self.act_mask_t[i-1])/2)
+                up=f-1
+            if i>=1 and i<=m-1:
+                down=math.ceil((act_mask_t[i]+act_mask_t[i-1])/2)
             else:
                 down=0
-            if self.action[i]==0:#左移
-                self.act_mask_t[i]-=min(1,(self.act_mask_t[i]-down))
-            if self.action[i]==1:#不移动
+            if action[i]==0:#左移
+                act_mask_t[i]-=min(1,(act_mask_t[i]-down))
+            if action[i]==1:#不移动
                 pass 
-            if self.action[i]==2:#右移动
-                self.act_mask_t[i]+=min(1,(up-self.act_mask_t[i]))
-        return self.act_mask_t
-    
+            if action[i]==2:#右移动
+                act_mask_t[i]+=min(1,(up-act_mask_t[i]-1))
+        # print('QQQQQ3')
+
+        # print(act_mask_t)
+        return act_mask_t
+
     def at_lstm(self,observation):
         #加载lstm，产生准确度
-        return 
+        
+        return random.uniform(-5,5)
