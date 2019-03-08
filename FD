@@ -10,7 +10,7 @@ import tensorflow as tf
 import numpy as np
 
 class FDnet:
-    def __int__(
+    def __init__(
             self,
             n_actions,#actions的数量
             fc_dim=256,
@@ -18,6 +18,7 @@ class FDnet:
             m=5,#选择数
             learning_rate=0.01,
             reward_decay=0.95,
+            output_graph=False
             ):
         
         self.n_actions=n_actions
@@ -30,44 +31,53 @@ class FDnet:
         self.ep_obs, self.ep_as, self.ep_rs = [],[],[]#用于储存当前state，action，reward
         self._build_net()
         self.sess = tf.Session()
+        init = tf.global_variables_initializer()
+        self.sess.run(init) 
         
     def _build_net(self):
-        
-        self.tf_acts=tf.placeholder(tf.int32,[None, ],name="actions_num")
-        self.tf_vt = tf.placeholder(tf.float32, [None, ], name="actions_value")
-        
-        self.mask=tf.placeholder(tf.float32,[self.f],name='mask')#掩码，在run里定义
-        self.F=tf.placeholder(tf.float32,[self.f,None],name='F')#F
-        M=tf.boolean_mask(self.F,tf.cast(self.mask,bool))#M
-        MF=tf.concat([M, self.F],0)#MF
-        
-        MF_reshape=tf.reshape(MF,[1,25,10,1])#调整MF的shape以便丢入CNN
-        "*************CNN*************"
-        x=tf.layers.conv2d(MF_reshape, filters=32,kernel_size=3,padding='SAME',name='c1')
-        x=tf.layers.max_pooling2d(x, pool_size=2, strides=2,name='p1')
-        x=tf.layers.conv2d(x, filters=64, kernel_size=3, padding='SAME',name='c2')
-        x=tf.layers.max_pooling2d(x, pool_size=2, strides=2,name='p2')
-        x=tf.layers.conv2d(x, filters=128, kernel_size=3, padding='SAME',name='c3')
-        x=tf.layers.max_pooling2d(x, pool_size=2, strides=2,name='p3')
+        with tf.name_scope('inputs'):
 
-        "*************FC*************"
-        fc1=tf.layers.dense(x,self.fc_dim,name='fc1')
-        fc2=tf.layers.dense(tf.reshape(self.mask,[-1,self.f]),self.fc_dim,name='fc2')
-        # fc1_flatten=tf.contrib.layers.flatten(fc1)
-        fc1_flatten=fc1.flatten()        
-        fc2_flatten=fc2.flatten()
-        
-        concats=tf.concat([fc1_flatten,fc2_flatten],1)
-        fc3=tf.layers.dense(concats,3*self.m,name='fc3')
-        fc3_reshape=tf.reshape(fc3,[-1,3])
-        self.prob=tf.nn.softmax(fc3_reshape,1,name='prob')        
-        
-        neg_log_prob=tf.reduce_sum(-tf.log(self.prob)*tf.one_hot(self.tf_acts,self.n_actions),axis=1)
-        loss=tf.reduce_mean(neg_log_prob * self.tf_vt)
-        
-        self.train_op=tf.train.AdamOptimizer(self.lr).minimize(loss)
+            self.tf_acts=tf.placeholder(tf.int32,[None, ],name="actions_num")
+            self.tf_vt = tf.placeholder(tf.float32, [None, ], name="actions_value")
+            
+            self.mask=tf.placeholder(tf.float32,[self.f],name='mask')#掩码，在run里定义
+            # print(self.sess.run(tf.shape(mask))
+            self.F=tf.placeholder(tf.float32,[self.f,None],name='F')#F
+            M=tf.boolean_mask(self.F,tf.cast(self.mask,bool))#M m*3
+            MF=tf.concat([M, self.F],0)#MF
+            
+            # print(tf.shape(self.mask))
+            MF_reshape=tf.reshape(MF,[1,25,3,1])#调整MF的shape以便丢入CNN
+            #"*************CNN*************"
+            x=tf.layers.conv2d(MF_reshape,filters=32,kernel_size=3,padding='SAME',name='c1')
+            x=tf.layers.max_pooling2d(x, pool_size=1, strides=2,name='p1')
+            x=tf.layers.conv2d(x, filters=64, kernel_size=3, padding='SAME',name='c2')
+            x=tf.layers.max_pooling2d(x, pool_size=1, strides=2,name='p2')
+            x=tf.layers.conv2d(x, filters=128, kernel_size=3, padding='SAME',name='c3')
+            x=tf.layers.max_pooling2d(x, pool_size=1, strides=2,name='p3')
     
+           # "*************FC*************"
+            fc1=tf.layers.dense(x,self.fc_dim,name='fc1')
+            fc2=tf.layers.dense(tf.reshape(self.mask,[-1,self.f]),self.fc_dim,name='fc2')
+            fc1_flatten=tf.contrib.layers.flatten(fc1)
+            fc2_flatten=tf.contrib.layers.flatten(fc2)
+    
+            #fc1_flatten=fc1.flatten()        
+            #fc2_flatten=fc2.flatten()
+            
+            concats=tf.concat([fc1_flatten,fc2_flatten],1)
+            fc3=tf.layers.dense(concats,3*self.m,name='fc3')
+            fc3_reshape=tf.reshape(fc3,[-1,3])
+            self.prob=tf.nn.softmax(fc3_reshape,1,name='prob')        
+        with tf.name_scope('loss'):
+
+            neg_log_prob=tf.reduce_sum(-tf.log(self.prob)*tf.one_hot(self.tf_acts,self.n_actions),axis=1)
+            loss=tf.reduce_mean(neg_log_prob * self.tf_vt)
+        with tf.name_scope('train'):
+            self.train_op=tf.train.AdamOptimizer(self.lr).minimize(loss)
+        
     def choose_action(self,observation,data):
+
         prob_weights=self.sess.run(self.prob,feed_dict={self.mask:observation,self.F:data})
         action=[]
         for pr in prob_weights:
@@ -79,7 +89,7 @@ class FDnet:
         self.ep_as.append(a)   
         self.ep_rs.append(r)   
     
-    def learn(self):
+    def learn(self,data):
         #处理reward
         discounted_ep_rs_norm=self._discount_and_norm_rewards()
         #训练
@@ -95,19 +105,22 @@ class FDnet:
         
         
     def _discount_and_norm_rewards(self):#归一化reward
-        discounted_ep_re=np.zeros_like(self.ep_rs)
+        discounted_ep_rs=np.zeros_like(self.ep_rs)
         running_add = 0
         for t in reversed(range(0,len(self.ep_rs))):
-            rinning_add=running_add*self.gamma+self.ep_rs[t]
+            running_add=running_add*self.gamma+self.ep_rs[t]
             discounted_ep_rs[t]=running_add
             
+        # print('EEE1')
+        # print(discounted_ep_rs)
+        # c=np.mean(discounted_ep_rs)
+        # print('EEE2')
+        # print(c)
+           
         discounted_ep_rs -= np.mean(discounted_ep_rs)
         discounted_ep_rs /= np.std(discounted_ep_rs)
-        return discounted_ep_rs
+        return discounted_ep_rs.reshape([-1,1])
  
        
-        
-        
-        
         
         
